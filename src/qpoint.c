@@ -6,6 +6,9 @@
 #include "fast_math.h"
 #include "vec3.h"
 #include "quaternion.h"
+#ifdef _OPENMP
+#include "omp.h"
+#endif
 
 #define _unused(x) ((void)x)
 
@@ -966,12 +969,26 @@ void qp_radec2azel(qp_memory_t *mem,
 		   double *lat, double *ctime, double *az, double *el,
 		   double *hpa, int n) {
   quat_t q;
+  qp_memory_t *memloc = mem;
+  #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+  #endif
 
-  for (int i=0; i<n; i++) {
-    qp_radecpa2quat(mem, ra[i], dec[i], (pa == NULL) ? 0 : pa[i], q);
-    qp_quat2azel(mem, q, lon[i], lat[i], ctime[i], az + i, el + i,
-		 (hpa == NULL) ? NULL : (hpa + i));
-  }
+  #ifdef _OPENMP
+  #pragma omp for private(q) schedule(static, 128)
+  #endif
+      for (int i=0; i<n; i++) {
+          qp_radecpa2quat(memloc, ra[i], dec[i], (pa == NULL) ? 0 : pa[i], q);
+          qp_quat2azel(memloc, q, lon[i], lat[i], ctime[i], az + i, el + i,
+                       (hpa == NULL) ? NULL : (hpa + i));
+      }
+      qp_free_memory(memloc);
+  #ifdef _OPENMP
+    }
+  #endif
+
 }
 
 // all input and output angles are in degrees!
