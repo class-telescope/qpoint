@@ -1498,16 +1498,13 @@ class QPoint(object):
             if not self.get('mean_aber'):
                 raise ValueError('ctime required if mean_aber is False')
             ctime = np.zeros((q_bore.size // 4,), dtype=q_bore.dtype)
-        ctime  = check_input('ctime', ctime)
-        pix  = check_output('pix', shape=ctime.shape,
-                                dtype=np.int, **kwargs)
+        ctime = check_input('ctime', ctime)
+        pix = check_output('pix', shape=ctime.shape, dtype=int, **kwargs)
         if return_pa:
             pa = check_output('pa', shape=ctime.shape, **kwargs)
         else:
-            sin2psi = check_output('sin2psi', shape=ctime.shape,
-                                   **kwargs)
-            cos2psi = check_output('cos2psi', shape=ctime.shape,
-                                   **kwargs)
+            sin2psi = check_output('sin2psi', shape=ctime.shape,**kwargs)
+            cos2psi = check_output('cos2psi', shape=ctime.shape,**kwargs)
         n = ctime.size
 
         if q_hwp is None:
