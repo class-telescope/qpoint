@@ -76,16 +76,38 @@ void qp_radecpa2gal(qp_memory_t *mem, double *ra, double *dec,
 
 void qp_radec2galn(qp_memory_t *mem, double *ra, double *dec,
                    double *sin2psi, double *cos2psi, int n) {
-  for (int ii=0; ii<n; ii++) {
-    qp_radec2gal(mem, ra+ii, dec+ii, sin2psi+ii, cos2psi+ii);
-  }
+    qp_memory_t *memloc = mem;
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for schedule(static, OMP_CHUNK)
+    #endif
+    for (int ii=0; ii<n; ii++) {
+        qp_radec2gal(memloc, ra+ii, dec+ii, sin2psi+ii, cos2psi+ii);
+    }
+    qp_free_memory(memloc);
+    #ifdef _OPENMP
+    }
+    #endif
 }
 
 void qp_radecpa2galn(qp_memory_t *mem, double *ra, double *dec,
                      double *pa, int n) {
-  for (int ii=0; ii<n; ii++) {
-    qp_radecpa2gal(mem, ra+ii, dec+ii, pa+ii);
-  }
+    qp_memory_t *memloc = mem;
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for schedule(static, OMP_CHUNK)
+    #endif
+    for (int ii=0; ii<n; ii++) {
+        qp_radecpa2gal(mem, ra+ii, dec+ii, pa+ii);
+    }
+    qp_free_memory(memloc);
+    #ifdef _OPENMP
+        }
+    #endif
 }
 
 void qp_gal2radec_quatn(qp_memory_t *mem, quat_t *q, int n) {
