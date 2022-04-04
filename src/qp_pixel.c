@@ -8,6 +8,7 @@
 #include "quaternion.h"
 #include "chealpix.h"
 
+#define OMP_CHUNK 4096
 /* Compute healpix pixel number for given nside and ra/dec */
 long qp_radec2pix(qp_memory_t *mem, double ra, double dec, int nside) {
   long pix;
@@ -288,7 +289,7 @@ void qp_bore2pix(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
     #pragma omp parallel
   {
       qp_memory_t *memloc = qp_copy_memory(mem);
-  #pragma omp for private(q) schedule(static, 128)
+  #pragma omp for private(q) schedule(static, OMP_CHUNK)
   #endif
   for (int ii = 0; ii < n; ii++) {
     qp_bore2det(memloc, q_off, ctime[ii], q_bore[ii], q);
@@ -307,7 +308,7 @@ void qp_bore2pixpa(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore
   #pragma omp parallel
   {
       qp_memory_t *memloc = qp_copy_memory(mem);
-  #pragma omp for private(q) schedule(static, 128)
+  #pragma omp for private(q) schedule(static, OMP_CHUNK)
   #endif
 
   for (int ii = 0; ii < n; ii++) {

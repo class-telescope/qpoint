@@ -10,6 +10,7 @@
 #include "omp.h"
 #endif
 
+#define OMP_CHUNK 4096
 #define _unused(x) ((void)x)
 
 void ctime2jd(double ctime, double jd[2]) {
@@ -469,9 +470,23 @@ void qp_azel2bore(qp_memory_t *mem, double *az, double *el, double *pitch,
 void qp_azelpsi2bore(qp_memory_t *mem, double *az, double *el, double *psi, double *pitch,
 		  double *roll, double *lon, double *lat, double *ctime,
 		  quat_t *q, int n) {
-  for (int i=0; i<n; i++)
-    qp_azelpsi2quat(mem, az[i], el[i], psi[i], (pitch == NULL) ? 0 : pitch[i],
-                 (roll == NULL) ? 0 : roll[i], lon[i], lat[i], ctime[i], q[i]);
+    qp_memory_t *memloc = mem;
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for schedule(static, OMP_CHUNK)
+    #endif
+    for (int i = 0; i < n; i++) {
+        qp_azelpsi2quat(memloc, az[i], el[i], psi[i], (pitch == NULL) ? 0 : pitch[i],
+                        (roll == NULL) ? 0 : roll[i], lon[i], lat[i], ctime[i], q[i]);
+    }
+    qp_free_memory(memloc);
+    #ifdef _OPENMP
+    }
+    #endif
+
+
 }
 
 void qp_quat2azel(qp_memory_t *mem, quat_t q_in, double lon, double lat, double ctime,
@@ -828,11 +843,20 @@ void qp_bore2radec(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore
 		   double *ra, double *dec, double *sin2psi,
 		   double *cos2psi, int n) {
   quat_t q;
-
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for private(q) schedule(static, OMP_CHUNK)
+    #endif
   for (int i=0; i<n; i++) {
-    qp_bore2det(mem, q_off, ctime[i], q_bore[i], q);
-    qp_quat2radec(mem, q, ra+i, dec+i, sin2psi+i, cos2psi+i);
+    qp_bore2det(memloc, q_off, ctime[i], q_bore[i], q);
+    qp_quat2radec(memloc, q, ra+i, dec+i, sin2psi+i, cos2psi+i);
   }
+    qp_free_memory(memloc);
+    #ifdef _OPENMP
+    }
+    #endif
 }
 
 void qp_bore2radec_hwp(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
@@ -870,12 +894,22 @@ void qp_bore2rasindec_hwp(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t 
 
 void qp_bore2radecpa(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
                      double *ra, double *dec, double *pa, int n) {
-  quat_t q;
-
-  for (int i=0; i<n; i++) {
-    qp_bore2det(mem, q_off, ctime[i], q_bore[i], q);
-    qp_quat2radecpa(mem, q, ra+i, dec+i, pa+i);
-  }
+    quat_t q;
+    qp_memory_t *memloc = mem;
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for private(q) schedule(static, OMP_CHUNK)
+    #endif
+    for (int i = 0; i < n; i++) {
+        qp_bore2det(memloc, q_off, ctime[i], q_bore[i], q);
+        qp_quat2radecpa(memloc, q, ra + i, dec + i, pa + i);
+    }
+    qp_free_memory(memloc);
+    #ifdef _OPENMP
+    }
+    #endif
 }
 
 void qp_bore2radecpa_hwp(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
@@ -974,10 +1008,7 @@ void qp_radec2azel(qp_memory_t *mem,
     #pragma omp parallel
     {
         qp_memory_t *memloc = qp_copy_memory(mem);
-  #endif
-
-  #ifdef _OPENMP
-  #pragma omp for private(q) schedule(static, 128)
+  #pragma omp for private(q) schedule(static, OMP_CHUNK)
   #endif
       for (int i=0; i<n; i++) {
           qp_radecpa2quat(memloc, ra[i], dec[i], (pa == NULL) ? 0 : pa[i], q);
