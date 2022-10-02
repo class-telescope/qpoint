@@ -43,7 +43,7 @@ class BuildLib(build):
 
         # write version files
         with open('python/_version.py', 'w') as f:
-            f.write('__version__ = ({:d}, {:d}, {:d})\n'.format(*vtup))
+            f.write('__version__ = "{:d}.{:d}.{:d}"\n'.format(*vtup))
 
         build.run(self)
 

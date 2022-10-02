@@ -5,5 +5,8 @@ build/
 *.so
 local
 .*.swp
-python/_version.py
 *.nfs*
+.idea/
+*.egg-info/
+*.egg-info
+python/_version.py
