@@ -308,7 +308,7 @@ void qp_bore2pix(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
   quat_t q;
   qp_memory_t *memloc = mem;
   #ifdef _OPENMP
-    #pragma omp parallel
+  #pragma omp parallel
   {
       qp_memory_t *memloc = qp_copy_memory(mem);
   #pragma omp for private(q) schedule(static, OMP_CHUNK)
@@ -318,9 +318,30 @@ void qp_bore2pix(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
     qp_quat2pix(memloc, q, nside, pix+ii, sin2psi+ii, cos2psi+ii);
   }
  #ifdef _OPENMP
-    }
-  #endif
+ }
+ #endif
 }
+
+void qp_bore2pixgal(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
+                    int nside, long *pix, double *sin2psi, double *cos2psi, int n) {
+    quat_t q;
+    qp_memory_t *memloc = mem;
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for private(q) schedule(static, OMP_CHUNK)
+    #endif
+    for (int ii = 0; ii < n; ii++) {
+        qp_bore2det(memloc, q_off, ctime[ii], q_bore[ii], q);
+        qp_radec2gal_quat(memloc, q);
+        qp_quat2pix(memloc, q, nside, pix+ii, sin2psi+ii, cos2psi+ii);
+    }
+    #ifdef _OPENMP
+    }
+    #endif
+}
+
 
 void qp_bore2pixpa(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
                    int nside, long *pix, double *pa, int n) {
@@ -333,21 +354,41 @@ void qp_bore2pixpa(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore
   #pragma omp for private(q) schedule(static, OMP_CHUNK)
   #endif
 
-  for (int ii = 0; ii < n; ii++) {
-    qp_bore2det(memloc, q_off, ctime[ii], q_bore[ii], q);
-    qp_quat2pixpa(memloc, q, nside, pix+ii, pa+ii);
-  }
-    qp_free_memory(memloc);
+      for (int ii = 0; ii < n; ii++) {
+          qp_bore2det(memloc, q_off, ctime[ii], q_bore[ii], q);
+          qp_quat2pixpa(memloc, q, nside, pix+ii, pa+ii);
+      }
+      qp_free_memory(memloc);
   #ifdef _OPENMP
-    }
+  }
   #endif
+}
+void qp_bore2pixgalpa(qp_memory_t *mem, quat_t q_off, double *ctime, quat_t *q_bore,
+                   int nside, long *pix, double *pa, int n) {
+    quat_t q;
+    qp_memory_t *memloc = mem;
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        qp_memory_t *memloc = qp_copy_memory(mem);
+    #pragma omp for private(q) schedule(static, OMP_CHUNK)
+    #endif
+
+        for (int ii = 0; ii < n; ii++) {
+            qp_bore2det(memloc, q_off, ctime[ii], q_bore[ii], q);
+            qp_radec2gal_quat(memloc, q);
+            qp_quat2pixpa(memloc, q, nside, pix+ii, pa+ii);
+        }
+        qp_free_memory(memloc);
+    #ifdef _OPENMP
+    }
+    #endif
 }
 
 void qp_bore2pix_hwp(qp_memory_t *mem, quat_t q_off, double *ctime,
                      quat_t *q_bore, quat_t *q_hwp, int nside, long *pix,
                      double *sin2psi, double *cos2psi, int n) {
   quat_t q;
-
   for (int ii = 0; ii < n; ii++) {
     qp_bore2det_hwp(mem, q_off, ctime[ii], q_bore[ii], q_hwp[ii], q);
     qp_quat2pix(mem, q, nside, pix+ii, sin2psi+ii, cos2psi+ii);

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 try:
     import itertools.izip as zip
 except ImportError:
@@ -11,6 +12,7 @@ from ._libqpoint import libqp as qp
 from ._libqpoint import check_input, check_inputs, check_output
 
 __all__ = ['QPoint', 'check_input', 'check_inputs', 'check_output']
+
 
 class QPoint(object):
 
@@ -251,6 +253,7 @@ class QPoint(object):
             def func(x0, x1, x2, x3):
                 q = np.ascontiguousarray([x0, x1, x2, x3])
                 return qp.qp_update_ref(self._memory, q)
+
             fvec = np.vectorize(func, [np.double])
             if q.size // 4 > 1:
                 q = q.transpose()
@@ -435,7 +438,7 @@ class QPoint(object):
             check_inputs(delta_az, delta_el, delta_psi)
         ndet = delta_az.size
 
-        quat = check_output('quat', shape=(ndet,4))
+        quat = check_output('quat', shape=(ndet, 4))
         qp.qp_det_offsetn(delta_az, delta_el, delta_psi, quat, ndet)
 
         if ndet == 1:
@@ -497,7 +500,7 @@ class QPoint(object):
         theta = check_input('theta', np.atleast_1d(theta))
         n = theta.size
 
-        quat = check_output('quat', shape=(n,4))
+        quat = check_output('quat', shape=(n, 4))
         qp.qp_hwp_quatn(theta, quat, n)
 
         if n == 1:
@@ -551,7 +554,7 @@ class QPoint(object):
         n = az.size
 
         # identity quaternion
-        q = check_output('q', q, shape=(n,4), fill=[1,0,0,0])
+        q = check_output('q', q, shape=(n, 4), fill=[1, 0, 0, 0])
 
         qp.qp_azel2bore(self._memory, az, el, pitch, roll, lon, lat,
                         ctime, q, n)
@@ -559,7 +562,7 @@ class QPoint(object):
         return q
 
     def azelpsi2bore(self, az, el, psi, pitch, roll, lon, lat, ctime, q=None,
-                  **kwargs):
+                     **kwargs):
         """
         Estimate the quaternion for the boresight orientation on the sky given
         the attitude (az/el/psi/pitch/roll), location on the earth (lon/lat) and
@@ -610,10 +613,10 @@ class QPoint(object):
         n = az.size
 
         # identity quaternion
-        q = check_output('q', q, shape=(n,4), fill=[1,0,0,0])
+        q = check_output('q', q, shape=(n, 4), fill=[1, 0, 0, 0])
 
         qp.qp_azelpsi2bore(self._memory, az, el, psi, pitch, roll, lon, lat,
-                        ctime, q, n)
+                           ctime, q, n)
 
         return q
 
@@ -670,14 +673,14 @@ class QPoint(object):
 
         self.set(**kwargs)
 
-        q_off  = check_input('q_off', q_off, quat=True)
+        q_off = check_input('q_off', q_off, quat=True)
         q_bore = check_input('q_bore', np.atleast_2d(q_bore), quat=True)
         shape = (q_bore.size // 4,)
         if ctime is None:
             if not self.get('mean_aber'):
                 raise ValueError('ctime required if mean_aber is False')
             ctime = np.zeros(shape, dtype=q_bore.dtype)
-        ctime  = check_input('ctime', ctime, shape=shape)
+        ctime = check_input('ctime', ctime, shape=shape)
         pars = dict(shape=ctime.shape, dtype=np.double)
         ra = check_output('ra', ra, **pars)
         dec = check_output('dec', dec, **pars)
@@ -833,10 +836,10 @@ class QPoint(object):
         return ra, dec, sin2psi, cos2psi
 
     def azelpsi2radec(self, delta_az, delta_el, delta_psi,
-                   az, el, psi, pitch, roll, lon, lat, ctime,
-                   hwp=None, sindec=False, return_pa=False,
-                   ra=None, dec=None, pa=None, sin2psi=None,
-                   cos2psi=None, **kwargs):
+                      az, el, psi, pitch, roll, lon, lat, ctime,
+                      hwp=None, sindec=False, return_pa=False,
+                      ra=None, dec=None, pa=None, sin2psi=None,
+                      cos2psi=None, **kwargs):
         """
         Estimate the orientation on the sky for a detector offset from
         boresight, given the boresight attitude (az/el/pitch/roll), location on
@@ -918,31 +921,31 @@ class QPoint(object):
         if hwp is None:
             if return_pa:
                 qp.qp_azelpsi2radecpa(self._memory, delta_az, delta_el, delta_psi,
-                                   az, el, psi, pitch, roll, lon, lat, ctime,
-                                   ra, dec, pa, n)
+                                      az, el, psi, pitch, roll, lon, lat, ctime,
+                                      ra, dec, pa, n)
             elif sindec:
                 qp.qp_azelpsi2rasindec(self._memory, delta_az, delta_el, delta_psi,
-                                    az, el, psi, pitch, roll, lon, lat, ctime,
-                                    ra, dec, sin2psi, cos2psi, n)
+                                       az, el, psi, pitch, roll, lon, lat, ctime,
+                                       ra, dec, sin2psi, cos2psi, n)
             else:
                 qp.qp_azelpsi2radec(self._memory, delta_az, delta_el, delta_psi,
-                                 az, el, psi, pitch, roll, lon, lat, ctime,
-                                 ra, dec, sin2psi, cos2psi, n)
+                                    az, el, psi, pitch, roll, lon, lat, ctime,
+                                    ra, dec, sin2psi, cos2psi, n)
         else:
             hwp = check_input('hwp', hwp, shape=az.shape)
 
             if return_pa:
                 qp.qp_azelpsi2radec_hwp(self._memory, delta_az, delta_el, delta_psi,
-                                     az, el, psi, pitch, roll, lon, lat, ctime, hwp,
-                                     ra, dec, pa, n)
+                                        az, el, psi, pitch, roll, lon, lat, ctime, hwp,
+                                        ra, dec, pa, n)
             elif sindec:
                 qp.qp_azelpsi2rasindec_hwp(self._memory, delta_az, delta_el, delta_psi,
-                                        az, el, psi, pitch, roll, lon, lat, ctime, hwp,
-                                        ra, dec, sin2psi, cos2psi, n)
+                                           az, el, psi, pitch, roll, lon, lat, ctime, hwp,
+                                           ra, dec, sin2psi, cos2psi, n)
             else:
                 qp.qp_azelpsi2radec_hwp(self._memory, delta_az, delta_el, delta_psi,
-                                     az, el, psi, pitch, roll, lon, lat, ctime, hwp,
-                                     ra, dec, sin2psi, cos2psi, n)
+                                        az, el, psi, pitch, roll, lon, lat, ctime, hwp,
+                                        ra, dec, sin2psi, cos2psi, n)
 
         if return_pa:
             return ra, dec, pa
@@ -1030,7 +1033,7 @@ class QPoint(object):
 
         ra, dec, pa = check_inputs(ra, dec, pa)
         n = ra.size
-        quat = check_output('quat', shape=(n,4), dtype=np.double, **kwargs)
+        quat = check_output('quat', shape=(n, 4), dtype=np.double, **kwargs)
         qp.qp_radecpa2quatn(self._memory, ra, dec, pa, quat, n)
 
         if n == 1:
@@ -1300,7 +1303,7 @@ class QPoint(object):
         calculation.
         """
         return self.rotate_coord(ra, dec, pa, sin2psi, cos2psi,
-                                 coord=['C','G'], inplace=inplace, **kwargs)
+                                 coord=['C', 'G'], inplace=inplace, **kwargs)
 
     def gal2radec(self, ra, dec, pa=None, sin2psi=None, cos2psi=None,
                   inplace=True, **kwargs):
@@ -1335,9 +1338,9 @@ class QPoint(object):
         calculation.
         """
         return self.rotate_coord(ra, dec, pa, sin2psi, cos2psi,
-                                 coord=['G','C'], inplace=inplace, **kwargs)
+                                 coord=['G', 'C'], inplace=inplace, **kwargs)
 
-    def rotate_map(self, map_in, coord=['C','G'], map_out=None,
+    def rotate_map(self, map_in, coord=['C', 'G'], map_out=None,
                    interp_pix=True, **kwargs):
         """
         Rotate a polarized 3-x-npix map from one coordinate system to another.
@@ -1444,8 +1447,7 @@ class QPoint(object):
             return pix, sin2psi, cos2psi
         return pix
 
-    def bore2pix(self, q_off, ctime, q_bore, q_hwp=None, nside=256, pol=True,
-                 return_pa=False, **kwargs):
+    def bore2pix(self, q_off, ctime, q_bore, q_hwp=None, nside=256, coord='C', pol=True, return_pa=False, **kwargs):
         """
         Calculate the orientation on the sky for a detector offset from the
         boresight.  Detector offsets are defined assuming the boresight is
@@ -1468,6 +1470,8 @@ class QPoint(object):
             Must be broadcastable to the same shape as `q_bore`.
         nside : int, optional
             HEALpix map dimension.  Default: 256.
+        coord: str, optional
+            Coordinate system for the output.  Supported systems: C, G.
         pol : bool, optional
             If `False`, return only the pixel timestream
         return_pa : bool, optional
@@ -1492,7 +1496,7 @@ class QPoint(object):
 
         self.set(**kwargs)
 
-        q_off  = check_input('q_off', q_off, quat=True)
+        q_off = check_input('q_off', q_off, quat=True)
         q_bore = check_input('q_bore', q_bore, quat=True)
         if ctime is None:
             if not self.get('mean_aber'):
@@ -1503,26 +1507,31 @@ class QPoint(object):
         if return_pa:
             pa = check_output('pa', shape=ctime.shape, **kwargs)
         else:
-            sin2psi = check_output('sin2psi', shape=ctime.shape,**kwargs)
-            cos2psi = check_output('cos2psi', shape=ctime.shape,**kwargs)
+            sin2psi = check_output('sin2psi', shape=ctime.shape, **kwargs)
+            cos2psi = check_output('cos2psi', shape=ctime.shape, **kwargs)
         n = ctime.size
 
         if q_hwp is None:
-            if return_pa:
-                qp.qp_bore2pixpa(self._memory, q_off, ctime, q_bore,
-                                 nside, pix, pa, n)
+            if coord == 'C':
+                if return_pa:
+                    qp.qp_bore2pixpa(self._memory, q_off, ctime, q_bore, nside, pix, pa, n)
+                else:
+                    qp.qp_bore2pix(self._memory, q_off, ctime, q_bore, nside, pix, sin2psi, cos2psi, n)
+            elif coord == 'G':
+                if return_pa:
+                    qp.qp_bore2pixgalpa(self._memory, q_off, ctime, q_bore, nside, pix, pa, n)
+                else:
+                    qp.qp_bore2pixgal(self._memory, q_off, ctime, q_bore, nside, pix, sin2psi, cos2psi, n)
             else:
-                qp.qp_bore2pix(self._memory, q_off, ctime, q_bore,
-                               nside, pix, sin2psi, cos2psi, n)
+                raise ValueError('coord must be C or G')
         else:
+            assert coord == 'C'
             q_hwp = check_input('q_hwp', q_hwp, shape=q_bore.shape)
 
             if return_pa:
-                qp.qp_bore2pixpa_hwp(self._memory, q_off, ctime, q_bore,
-                                     q_hwp, nside, pix, pa, n)
+                qp.qp_bore2pixpa_hwp(self._memory, q_off, ctime, q_bore, q_hwp, nside, pix, pa, n)
             else:
-                qp.qp_bore2pix_hwp(self._memory, q_off, ctime, q_bore,
-                                   q_hwp, nside, pix, sin2psi, cos2psi, n)
+                qp.qp_bore2pix_hwp(self._memory, q_off, ctime, q_bore, q_hwp, nside, pix, sin2psi, cos2psi, n)
 
         if pol is True:
             if return_pa:
@@ -1631,7 +1640,7 @@ class QPoint(object):
 
         return mjds, dut1, x, y
 
-    def load_bulletin_a(self, filename, columns=['mjd','dut1','x','y'], **kwargs):
+    def load_bulletin_a(self, filename, columns=['mjd', 'dut1', 'x', 'y'], **kwargs):
         """
         Load IERS Bulletin A from file and store in memory.  The file must be
         readable using `numpy.loadtxt` with `unpack=True`, and is assumed to be
@@ -1659,10 +1668,10 @@ class QPoint(object):
             Polar motion corrections
         """
 
-        req_columns = ['mjd','dut1','x','y']
+        req_columns = ['mjd', 'dut1', 'x', 'y']
         if not set(req_columns) <= set(columns):
             raise KeyError(
-                'Missing columns {}'.format(list(set(req_columns)-set(columns))))
+                'Missing columns {}'.format(list(set(req_columns) - set(columns))))
         kwargs['unpack'] = True
         data = np.loadtxt(filename, **kwargs)
         mjd, x, y, dut1 = (data[columns.index(x)] for x in req_columns)
@@ -1670,9 +1679,8 @@ class QPoint(object):
 
         try:
             qp.qp_set_iers_bulletin_a(self._memory, mjd_min, mjd_max, dut1, x, y)
-        except:
-            raise RuntimeError(
-                'Error loading Bulletin A data from file {}'.format(filename))
+        except Exception:
+            raise RuntimeError('Error loading Bulletin A data from file {}'.format(filename))
 
         return mjd, dut1, x, y
 
@@ -1683,7 +1691,8 @@ class QPoint(object):
 
         def func(x):
             return lib.qp_get_bulletin_a(self._memory, x)
-        fvec = np.vectorize(func, [np.double]*3)
+
+        fvec = np.vectorize(func, [np.double] * 3)
 
         out = fvec(mjd)
         if out[0].shape == ():
